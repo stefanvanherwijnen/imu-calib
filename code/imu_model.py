@@ -19,6 +19,18 @@ def sensor_error_model(errors):
     
     return M, b
 
+def calibration_parameters(errors):
+    KX, KY, KZ, NOX, NOY, NOZ, BX, BY, BZ = errors
+    # I = np.array([[1.0, 0.0, 0.0], 
+    #               [0.0, 1.0, 0.0], 
+    #               [0.0, 0.0, 1.0]])
+    M = np.array([[KX, NOY, NOZ], 
+                  [0.0, KY, NOX], 
+                  [0.0, 0.0, KZ]])
+    b = np.array([BX, BY, BZ])
+    
+    return M, b
+
 def misalignment(epsilon):
     '''
     Build rotation matrix from gyroscope coordinate frame

@@ -52,7 +52,7 @@ def residual_gyr(theta, gyrs, accs, standstill_flags, dt, least_squares = True):
     motion_ends = np.where(standstill_changes == 1)
     motion_start_end_idxs = []
     for s, e in zip(*motion_starts, *motion_ends):
-        motion_start_end_idxs.append([s - 5, e + 5])
+        motion_start_end_idxs.append([s, e])
     
     z = np.zeros(2 * len(motion_start_end_idxs))
     prev_idx_motion_end = 0

@@ -6,6 +6,9 @@ from code.helpers import *
 from code.cost_functions import *
 from code.utilities import *
 
+import matplotlib.pyplot as plt
+import json
+
 np.set_printoptions(edgeitems=30, linewidth=1000, formatter={'float': '{: 0.4f}'.format})
 
 if __name__ == '__main__':
@@ -21,10 +24,10 @@ if __name__ == '__main__':
 
     # read file with ax, ay, az, wx, wy, wz measurements from IMU
     imu_data = np.genfromtxt(datafile, delimiter=' ')
-    standstill = generate_standstill_flags(imu_data)
+    standstill = generate_standstill_flags(imu_data, args.sampling_frequency)
 
     plot_imu_data_and_standstill(imu_data, standstill)
-
+    plt.show()
     accs, angs = imu_data[:,0:3], imu_data[:,3:6]
 
     # find accelerometer calibration parameters and calibrate accel measurements
@@ -58,3 +61,26 @@ if __name__ == '__main__':
     print("[ S_X     S_Y     S_Z     NO_X    NO_Y    NO_Z    B_X     B_Y     B_Z     E_X     E_Y     E_Z  ]")
     print(theta_found_gyr)
     print("Gyroscope residuals after calibration: ", residualSum())
+
+    gyr_calibrated = calibrate_gyroscope(imu_data[:,3:6], theta_found_gyr[0:9], theta_found_gyr[-3:])
+    plot_raw_and_calibrated_euler_angles(imu_data[:,3:6], gyr_calibrated, dt)
+
+    plot_calibrated_and_uncalibrated(imu_data[:,3:6], gyr_calibrated, 'Gyroscope', dt)
+    acc_calibration = calibration_parameters(theta_found_acc)
+    gyro_calibration = calibration_parameters(theta_found_gyr[0:9])
+    R = misalignment(theta_found_gyr[-3:])
+    calibration = {
+        'acc': {
+            'M': acc_calibration[0].tolist(),
+            'b': acc_calibration[1].tolist()
+        },
+        'gyro': {
+            'M': gyro_calibration[0].tolist(),
+            'b': gyro_calibration[1].tolist(),
+            'R': R.tolist()
+        }
+    }
+    with open('calibration_parameters.json', 'w', encoding='utf-8') as f:
+        json.dump(calibration, f, ensure_ascii=False, indent=2)
+
+    plt.show()

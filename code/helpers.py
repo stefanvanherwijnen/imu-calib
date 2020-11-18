@@ -1,7 +1,7 @@
 import numpy as np
 import scipy.optimize as optimize
 
-from code.imu_model import sensor_error_model, misalignment
+from code.imu_model import sensor_error_model, misalignment, calibration_parameters
 from code.quaternion import Quaternion
 
 def find_calib_params_acc(least_squares, residual, theta, accelerations, idxs_standstill):
@@ -13,12 +13,12 @@ def find_calib_params_acc(least_squares, residual, theta, accelerations, idxs_st
                                  args=(accelerations,
                                        idxs_standstill,
                                        least_squares,),
-                                 max_nfev = 25,
-                                 x_scale = [10., 10., 10., 10., 10., 10., 1., 1., 1.],
+                                #  max_nfev = 25,
+                                #  x_scale = [10., 10., 10., 10., 10., 10., 1., 1., 1.],
                                  method='trf', loss='soft_l1',
-                                 bounds = [
-                                       (-0.11, -0.11, -0.11, -0.11, -0.11, -0.11, -1.1, -1.1, -1.1),
-                                       (0.11,   0.11,  0.11,  0.11,  0.11,  0.11,  1.1,  1.1,  1.1)],
+                                #  bounds = [
+                                #        (-0.11, -0.11, -0.11, -0.11, -0.11, -0.11, -1.1, -1.1, -1.1),
+                                #        (0.11,   0.11,  0.11,  0.11,  0.11,  0.11,  1.1,  1.1,  1.1)],
         )
     return res.x
 
@@ -36,11 +36,11 @@ def find_calib_params_gyr(least_squares, residual, theta, ang_velocities, accele
                   dt,
                   least_squares,),
             max_nfev = 50,
-            x_scale = [10., 10., 10., 10., 10., 10., 10., 10., 10., 10, 10, 10],
+            # x_scale = [10., 10., 10., 10., 10., 10., 10., 10., 10., 10, 10, 10],
             method='trf', loss='soft_l1',
-            bounds = [
-                    (-0.11, -0.11, -0.11, -0.11, -0.11, -0.11, -0.11, -0.11, -0.11, -0.11, -0.11, -0.11),
-                    (0.11,   0.11,  0.11,  0.11,  0.11,  0.11,  0.11,  0.11,  0.11,  0.11,  0.11,  0.11)],
+            # bounds = [
+            #         (-0.11, -0.11, -0.11, -0.11, -0.11, -0.11, -0.11, -0.11, -0.11, -0.11, -0.11, -0.11),
+            #         (0.11,   0.11,  0.11,  0.11,  0.11,  0.11,  0.11,  0.11,  0.11,  0.11,  0.11,  0.11)],
         )
     return res.x
 

@@ -3,19 +3,21 @@ import numpy as np
 
 from code.quaternion import Quaternion
 from code.helpers import integrate_gyroscope
+from math import pi
 
-def generate_standstill_flags(imu_data):
+def generate_standstill_flags(imu_data, Fs):
     standstill = np.zeros(len(imu_data))
-    counter_after_motion = 60
+    minimum_standstill_duration = int(60/100*Fs)
+    counter_after_motion = minimum_standstill_duration
     # generate standstill flags
     for i, m in enumerate(imu_data):
         if np.linalg.norm(m[3:6]) < 0.13:
             counter_after_motion += 1
-            if counter_after_motion > 60:
+            if counter_after_motion > minimum_standstill_duration:
                 standstill[i] = 1
         else:
             standstill[i] = 0
-            standstill[i-60:i] = 0
+            standstill[i-minimum_standstill_duration:i] = 0
             counter_after_motion = 0
 
     return standstill
@@ -43,7 +45,7 @@ def plot_corrupted_accelerometer_and_gyro_measurements(corrupted_accelerometer_m
     ax[1].set(xlabel = "sample #", ylabel="$rad/s$")
     ax[1].legend(["x", "y", "z"])
     plt.tight_layout()
-    plt.show()
+    plt.draw()
 
 def plot_calibrated_and_uncalibrated_acc_norms(uncalibrated, calibrated):
     fig, ax = plt.subplots(1, 1, figsize=(16, 5))
@@ -52,7 +54,7 @@ def plot_calibrated_and_uncalibrated_acc_norms(uncalibrated, calibrated):
     ax.legend(["Uncalibrated norm", "Calibrated norm"])
     ax.set(xlabel = "sample #", ylabel = "$m/s^2$", title = "Calibration results for accelerometer")
     plt.tight_layout()
-    plt.show()
+    plt.draw()
 
 def plot_ideal_corrupted_calibrated_measurements(ideal_gyroscope, corrupted_gyroscope_measurements, gyr_calibrated):
     fig, ax = plt.subplots(3, 1, figsize=(16, 9))
@@ -75,7 +77,7 @@ def plot_ideal_corrupted_calibrated_measurements(ideal_gyroscope, corrupted_gyro
     ax[2].set(xlabel = "sample #", ylabel = "$rad/sec$", title = "Calibration results for gyroscope Z axis")
 
     plt.tight_layout()
-    plt.show()
+    plt.draw()
 
 def plot_imu_data_and_standstill(imu_data, standstill_flags):
     fig, ax = plt.subplots(2, 1, figsize=(16, 9))
@@ -95,7 +97,7 @@ def plot_imu_data_and_standstill(imu_data, standstill_flags):
         label = "in-motion", linestyle='none', marker='.', alpha=0.9, color='red')
     ax[1].legend()
 
-    plt.show()
+    plt.draw()
 
 def plot_accelerations_before_and_after(accs, accs_calibrated):
     fig, ax = plt.subplots(1, 1, figsize=(8, 3))
@@ -104,4 +106,33 @@ def plot_accelerations_before_and_after(accs, accs_calibrated):
     ax.plot(times, np.linalg.norm(accs_calibrated, axis=1), alpha = 0.5)
     ax.legend(["Uncalibrated norm", "Calibrated norm"])
     ax.set(xlabel='$time, s$', ylabel='$m/s^2$', ylim = [8.81, 10.81])
-    plt.show()
+    plt.draw()
+
+def plot_calibrated_and_uncalibrated (uncalibrated, calibrated, title, dt):
+    fig, ax = plt.subplots(1, 1, figsize=(8, 3))
+
+    ax.plot(uncalibrated, label="Uncalibrated", linestyle='none', marker='.')
+    ax.plot(calibrated, label="Calibrated")
+    ax.set_title(title)
+    ax.legend()
+
+def plot_raw_and_calibrated_euler_angles (raw, calibrated, dt):
+    fig, ax = plt.subplots(1, 1, figsize=(8, 3))
+
+    q_raw = Quaternion.from_euler(0, 0, 0)
+    euler_raw = []
+    q_cal = Quaternion.from_euler(0, 0, 0)
+    euler_cal = []
+    for i, val in enumerate(raw):
+        w_raw = raw[i]
+        w_calibrated = calibrated[i]
+        q_upd_raw = Quaternion.exactFromOmega(w_raw * dt)
+        q_upd_cal = Quaternion.exactFromOmega(w_calibrated * dt)
+        q_raw = q_raw.prod(q_upd_raw)
+        q_cal = q_cal.prod(q_upd_cal)
+        euler_raw.append([w * 180 / pi for w in q_raw.to_euler()])
+        euler_cal.append([w * 180 / pi for w in q_cal.to_euler()])
+
+    ax.plot(euler_raw, label="Raw", linestyle='none', marker='.')
+    ax.plot(euler_cal, label="Calibrated")
+    ax.legend()
